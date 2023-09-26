@@ -1,0 +1,82 @@
+---
+# Source: sd-core/charts/omec-user-plane/templates/service-upf.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterlb
+  labels:
+    release: sd-core
+    app: enterlb
+spec:
+  type: ClusterIP
+  selector:
+    release: sd-core
+    app: enterlb
+  ports:
+  - name: enterlb-web
+    protocol: TCP
+    port: 8080
+---
+# Source: sd-core/charts/omec-user-plane/templates/statefulset-upf.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: enterlb
+  labels:
+    release: sd-core
+    app: enterlb
+spec:
+  replicas: 1
+  serviceName: enterlb-headless
+  selector:
+    matchLabels:
+      release: sd-core
+      app: enterlb
+  template:
+    metadata:
+      labels:
+        release: sd-core
+        app: enterlb
+      annotations:
+        k8s.v1.cni.cncf.io/networks: '[
+          {
+            "name": "enterlb-net",
+            "interface": "core",
+            "ips": ["192.168.255.2/24"]
+          },
+          {
+            "name": "lb-upf1-net",
+            "interface": "upf101",
+            "ips": ["192.168.252.101/32"]
+          },
+          {
+            "name": "lb-upf2-net",
+            "interface": "upf102",
+            "ips": ["192.168.252.102/32"]
+          }
+        ]'
+    spec:
+      shareProcessNamespace: true
+      imagePullSecrets:
+        - name: aether.registry
+      containers:
+      - name: pfcp-agent
+        image: "parhamds/enterlb:v0.0.28"
+        imagePullPolicy: "IfNotPresent"
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        stdin: true
+        tty: true
+        command: ["sh", "-xec"]
+        args:
+        - echo 1 > /proc/sys/net/ipv4/ip_forward;
+          ip route replace 192.168.251.0/24 via 192.168.255.1;
+          echo 101 lb-upf1 >> /etc/iproute2/rt_tables;
+          echo 102 lb-upf2 >> /etc/iproute2/rt_tables;
+          ip rule add fwmark 101 table lb-upf1;
+          ip rule add fwmark 102 table lb-upf2;
+          ip route add 192.168.252.3 dev upf101 table lb-upf1;
+          ip route add 192.168.252.3 dev upf102 table lb-upf2;
+          iptables -F;
+          ./enterlb;

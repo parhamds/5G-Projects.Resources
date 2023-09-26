@@ -1,0 +1,133 @@
+---
+# Source: sd-core/charts/5g-control-plane/charts/mongodb/templates/standalone/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: omec
+  labels:
+    app.kubernetes.io/name: mongodb
+    helm.sh/chart: mongodb-10.7.1
+    app.kubernetes.io/instance: sd-core
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: mongodb
+spec:
+  type: ClusterIP
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: mongodb
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/instance: sd-core
+    app.kubernetes.io/component: mongodb
+---
+# Source: sd-core/charts/5g-control-plane/charts/mongodb/templates/standalone/dep-sts.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: omec
+  labels:
+    app.kubernetes.io/name: mongodb
+    helm.sh/chart: mongodb-10.7.1
+    app.kubernetes.io/instance: sd-core
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: mongodb
+spec:
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mongodb
+      app.kubernetes.io/instance: sd-core
+      app.kubernetes.io/component: mongodb
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mongodb
+        helm.sh/chart: mongodb-10.7.1
+        app.kubernetes.io/instance: sd-core
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: mongodb
+    spec:
+      
+      serviceAccountName: default
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: mongodb
+                    app.kubernetes.io/instance: sd-core
+                    app.kubernetes.io/component: mongodb
+                namespaces:
+                  - "omec"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+        sysctls: []
+      containers:
+        - name: mongodb
+          image: docker.io/bitnami/mongodb:4.4.4-debian-10-r0
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: ALLOW_EMPTY_PASSWORD
+              value: "yes"
+            - name: MONGODB_SYSTEM_LOG_VERBOSITY
+              value: "0"
+            - name: MONGODB_DISABLE_SYSTEM_LOG
+              value: "no"
+            - name: MONGODB_ENABLE_IPV6
+              value: "no"
+            - name: MONGODB_ENABLE_DIRECTORY_PER_DB
+              value: "no"
+          ports:
+            - name: mongodb
+              containerPort: 27017
+          livenessProbe:
+            exec:
+              command:
+                - mongo
+                - --disableImplicitSessions
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -ec
+                - |
+                  mongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+            - name: datadir
+              mountPath: /bitnami/mongodb
+              subPath: 
+      volumes:
+        - name: datadir
+          emptyDir: {}

@@ -1,0 +1,240 @@
+---
+# Source: sd-core/charts/omec-sub-provision/templates/configmap-simapp.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simapp
+  labels:
+    release: sd-core
+    app: simapp
+data:
+  simapp-run.sh: |
+    #!/bin/sh
+    
+    # Copyright 2020-present Open Networking Foundation
+    #
+    # SPDX-License-Identifier: Apache-2.0
+    
+    set -xe
+    
+    cd /simapp
+    cat config/simapp.yaml
+    
+    ./bin/simapp -simapp config/simapp.yaml
+    
+  simapp.yaml: |-
+    configuration:
+      device-groups:
+      - imsis:
+        - "208930100007487"
+        - "208930100007488"
+        - "208930100007489"
+        - "208930100007490"
+        - "208930100007491"
+        - "208930100007492"
+        - "208930100007493"
+        - "208930100007494"
+        - "208930100007495"
+        - "208930100007496"
+        - "208930100007497"
+        - "208930100007498"
+        - "208930100007499"
+        - "208930100007500"
+        - "208930100007501"
+        ip-domain-expanded:
+          dnn: internet
+          dns-primary: 8.8.8.8
+          mtu: 1460
+          ue-dnn-qos:
+            bitrate-unit: bps
+            dnn-mbr-downlink: 20000000
+            dnn-mbr-uplink: 4000000
+            traffic-class:
+              arp: 6
+              name: platinum
+              pdb: 300
+              pelr: 6
+              qci: 9
+          ue-ip-pool: 172.250.0.0/16
+        ip-domain-name: pool1
+        name: 5g-gnbsim-user
+        site-info: aiab
+      network-slices:
+      - application-filtering-rules:
+        - action: permit
+          endpoint: 0.0.0.0/0
+          priority: 250
+          rule-name: ALLOW-ALL
+        name: default
+        site-device-group:
+        - 5g-gnbsim-user
+        site-info:
+          gNodeBs:
+          - name: aiab-gnb1
+            tac: 1
+          plmn:
+            mcc: "208"
+            mnc: "93"
+          site-name: aiab
+          upf:
+            upf-name: upf
+            upf-port: 8805
+        slice-id:
+          sd: "010203"
+          sst: 1
+      provision-network-slice: false
+      sub-provision-endpt:
+        addr: webui.omec.svc.cluster.local
+        port: 5000
+      subscribers:
+      - key: 5122250214c33e723a5dd523fc145fc0
+        op: ""
+        opc: 981d464c7c52eb6e5036234984ad0bcf
+        plmnId: 20893
+        sequenceNumber: 16f3b3f70fc2
+        ueId-end: 208930100007501
+        ueId-start: 208930100007487
+    info:
+      description: SIMAPP initial local configuration
+      http-version: 1
+      version: 1.0.0
+    logger:
+      APP:
+        ReportCaller: false
+        debugLevel: info
+---
+# Source: sd-core/charts/omec-sub-provision/templates/service-simapp.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: simapp
+  labels:
+    release: sd-core
+    app: simapp
+spec:
+  type: ClusterIP
+  selector:
+    release: sd-core
+    app: simapp
+  ports:
+  - name: prometheus-exporter
+    port: 9089
+    protocol: TCP
+  - name: config-exporter
+    port: 8080
+    protocol: TCP
+---
+# Source: sd-core/charts/omec-sub-provision/templates/deployment-simapp.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: simapp
+  namespace: omec
+  labels:
+    release: sd-core
+    app: simapp
+---
+# Source: sd-core/charts/omec-sub-provision/templates/deployment-simapp.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: simapp
+  namespace: omec
+  labels:
+    release: sd-core
+    app: simapp
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+      - patch
+    resources:
+      - statefulsets
+      - daemonsets
+      - jobs
+      - pods
+      - services
+      - endpoints
+      - configmaps
+---
+# Source: sd-core/charts/omec-sub-provision/templates/deployment-simapp.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: simapp
+  namespace: omec
+  labels:
+    release: sd-core
+    app: simapp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: simapp
+subjects:
+  - kind: ServiceAccount
+    name: simapp
+    namespace: omec
+---
+# Source: sd-core/charts/omec-sub-provision/templates/deployment-simapp.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simapp
+  labels:
+    release: sd-core
+    app: simapp
+spec:
+  replicas: 1
+  #serviceName: simapp-headless
+  selector:
+    matchLabels:
+      release: sd-core
+      app: simapp
+  template:
+    metadata:
+      labels:
+        release: sd-core
+        app: simapp
+      annotations:
+        helm.sh/hook: pre-install
+        helm.sh/hook-weight: "5"
+        field.cattle.io/workloadMetrics: '[{"path":"/metrics","port":9089,"schema":"HTTP"}]'
+    spec:
+      serviceAccountName: simapp
+      initContainers:
+      - name: wait-simapp-module2
+        image: registry.opennetworking.org/docker.io/omecproject/pod-init:1.0.0
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'until nslookup simapp; do echo waiting for simapp; sleep 4; done;']
+      containers:
+      - name: simapp
+        image: registry.opennetworking.org/docker.io/omecproject/simapp:main-2a3d85f
+        imagePullPolicy: IfNotPresent
+        stdin: true
+        tty: true
+        command: ["/simapp/script/simapp-run.sh"]
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+        - name: run-script
+          mountPath: /simapp/script/simapp-run.sh
+          subPath: simapp-run.sh
+        - name: nf-config
+          mountPath: /simapp/config
+      volumes:
+      - name: run-script
+        configMap:
+          name: simapp
+          defaultMode: 493
+      - name: nf-config
+        configMap:
+          name: simapp
+          defaultMode: 493

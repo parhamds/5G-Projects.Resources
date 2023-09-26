@@ -1,0 +1,248 @@
+---
+# Source: sd-core/charts/5g-control-plane/templates/configmap-ausf.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ausf
+  labels:
+    release: sd-core
+    app: ausf
+data:
+  ausf-run.sh: |
+    #!/bin/sh
+    
+    # Copyright 2020-present Open Networking Foundation
+    #
+    # SPDX-License-Identifier: Apache-2.0
+    
+    set -xe
+    
+    cd /free5gc
+    cat config/ausfcfg.conf
+    
+    GOTRACEBACK=crash ./ausf/ausf -ausfcfg config/ausfcfg.conf
+    
+  ausfcfg.conf: |-
+    configuration:
+      groupId: ausfGroup001
+      nrfUri: http://nrf:29510
+      plmnSupportList:
+      - mcc: "208"
+        mnc: "93"
+      sbi:
+        bindingIPv4: 0.0.0.0
+        port: 29509
+        registerIPv4: ausf
+        scheme: http
+      serviceNameList:
+      - nausf-auth
+    info:
+      description: AUSF initial local configuration
+      version: 1.0.0
+    logger:
+      AMF:
+        ReportCaller: false
+        debugLevel: info
+      AUSF:
+        ReportCaller: false
+        debugLevel: info
+      Aper:
+        ReportCaller: false
+        debugLevel: info
+      CommonConsumerTest:
+        ReportCaller: false
+        debugLevel: info
+      FSM:
+        ReportCaller: false
+        debugLevel: info
+      MongoDBLibrary:
+        ReportCaller: false
+        debugLevel: info
+      N3IWF:
+        ReportCaller: false
+        debugLevel: info
+      NAS:
+        ReportCaller: false
+        debugLevel: info
+      NGAP:
+        ReportCaller: false
+        debugLevel: info
+      NRF:
+        ReportCaller: false
+        debugLevel: info
+      NamfComm:
+        ReportCaller: false
+        debugLevel: info
+      NamfEventExposure:
+        ReportCaller: false
+        debugLevel: info
+      NsmfPDUSession:
+        ReportCaller: false
+        debugLevel: info
+      NudrDataRepository:
+        ReportCaller: false
+        debugLevel: info
+      OpenApi:
+        ReportCaller: false
+        debugLevel: info
+      PCF:
+        ReportCaller: false
+        debugLevel: info
+      PFCP:
+        ReportCaller: false
+        debugLevel: info
+      PathUtil:
+        ReportCaller: false
+        debugLevel: info
+      SMF:
+        ReportCaller: false
+        debugLevel: info
+      UDM:
+        ReportCaller: false
+        debugLevel: info
+      UDR:
+        ReportCaller: false
+        debugLevel: info
+      WEBUI:
+        ReportCaller: false
+        debugLevel: info
+---
+# Source: sd-core/charts/5g-control-plane/templates/service-ausf.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ausf
+  labels:
+    release: sd-core
+    app: ausf
+spec:
+  type: ClusterIP
+  selector:
+    release: sd-core
+    app: ausf
+  ports:
+  - name: sbi
+    port: 29509
+    protocol: TCP
+
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-ausf.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ausf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: ausf
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-ausf.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ausf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: ausf
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+      - patch
+    resources:
+      - statefulsets
+      - daemonsets
+      - jobs
+      - pods
+      - services
+      - endpoints
+      - configmaps
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-ausf.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ausf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: ausf
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ausf
+subjects:
+  - kind: ServiceAccount
+    name: ausf
+    namespace: omec
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-ausf.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ausf
+  labels:
+    release: sd-core
+    app: ausf
+spec:
+  replicas: 1
+  #serviceName: ausf-headless
+  selector:
+    matchLabels:
+      release: sd-core
+      app: ausf
+  template:
+    metadata:
+      labels:
+        release: sd-core
+        app: ausf
+    spec:
+      serviceAccountName: ausf
+      initContainers:
+      - name: wait-ausf-module2
+        image: registry.opennetworking.org/docker.io/omecproject/pod-init:1.0.0
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'until nslookup ausf; do echo waiting for ausf; sleep 4; done;']
+      containers:
+      - name: ausf
+        image: registry.opennetworking.org/docker.io/omecproject/5gc-ausf:master-7dcc39c
+        imagePullPolicy: IfNotPresent
+        stdin: true
+        tty: true
+        command: ["/free5gc/script/ausf-run.sh"]
+        env:
+        - name: GRPC_GO_LOG_VERBOSITY_LEVEL
+          value: "99"
+        - name: GRPC_GO_LOG_SEVERITY_LEVEL
+          value: "info"
+        - name: GRPC_TRACE
+          value: "all"
+        - name: GRPC_VERBOSITY
+          value: "debug"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MANAGED_BY_CONFIG_POD 
+          value: "true"
+        volumeMounts:
+        - name: run-script
+          mountPath: /free5gc/script/ausf-run.sh
+          subPath: ausf-run.sh
+        - name: nf-config
+          mountPath: /free5gc/config
+      volumes:
+      - name: run-script
+        configMap:
+          name: ausf
+          defaultMode: 493
+      - name: nf-config
+        configMap:
+          name: ausf
+          defaultMode: 493

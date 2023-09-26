@@ -1,0 +1,263 @@
+---
+# Source: sd-core/charts/5g-control-plane/templates/configmap-pcf.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pcf
+  labels:
+    release: sd-core
+    app: pcf
+data:
+  pcf-run.sh: |
+    #!/bin/sh
+    
+    # Copyright 2020-present Open Networking Foundation
+    #
+    # SPDX-License-Identifier: Apache-2.0
+    
+    set -xe
+    
+    cd /free5gc
+    
+    cat config/pcfcfg.conf
+    
+    GOTRACEBACK=crash ./pcf/pcf -pcfcfg config/pcfcfg.conf
+    
+  pcfcfg.conf: |-
+    configuration:
+      defaultBdtRefId: BdtPolicyId-
+      mongodb:
+        name: free5gc
+        url: mongodb://mongodb:27017
+      nrfUri: http://nrf:29510
+      pcfName: PCF
+      plmnList:
+      - plmnId:
+          mcc: "208"
+          mnc: "93"
+      - plmnId:
+          mcc: "333"
+          mnc: "88"
+      sbi:
+        bindingIPv4: 0.0.0.0
+        port: 29507
+        registerIPv4: pcf
+        scheme: http
+      serviceList:
+      - serviceName: npcf-am-policy-control
+      - serviceName: npcf-smpolicycontrol
+        suppFeat: 3fff
+      - serviceName: npcf-bdtpolicycontrol
+      - serviceName: npcf-policyauthorization
+        suppFeat: 3
+      - serviceName: npcf-eventexposure
+      - serviceName: npcf-ue-policy-control
+    info:
+      description: PCF initial local configuration
+      version: 1.0.0
+    logger:
+      AMF:
+        ReportCaller: false
+        debugLevel: info
+      AUSF:
+        ReportCaller: false
+        debugLevel: info
+      Aper:
+        ReportCaller: false
+        debugLevel: info
+      CommonConsumerTest:
+        ReportCaller: false
+        debugLevel: info
+      FSM:
+        ReportCaller: false
+        debugLevel: info
+      MongoDBLibrary:
+        ReportCaller: false
+        debugLevel: info
+      N3IWF:
+        ReportCaller: false
+        debugLevel: info
+      NAS:
+        ReportCaller: false
+        debugLevel: info
+      NGAP:
+        ReportCaller: false
+        debugLevel: info
+      NRF:
+        ReportCaller: false
+        debugLevel: info
+      NamfComm:
+        ReportCaller: false
+        debugLevel: info
+      NamfEventExposure:
+        ReportCaller: false
+        debugLevel: info
+      NsmfPDUSession:
+        ReportCaller: false
+        debugLevel: info
+      NudrDataRepository:
+        ReportCaller: false
+        debugLevel: info
+      OpenApi:
+        ReportCaller: false
+        debugLevel: info
+      PCF:
+        ReportCaller: false
+        debugLevel: info
+      PFCP:
+        ReportCaller: false
+        debugLevel: info
+      PathUtil:
+        ReportCaller: false
+        debugLevel: info
+      SMF:
+        ReportCaller: false
+        debugLevel: info
+      UDM:
+        ReportCaller: false
+        debugLevel: info
+      UDR:
+        ReportCaller: false
+        debugLevel: info
+      WEBUI:
+        ReportCaller: false
+        debugLevel: info
+---
+# Source: sd-core/charts/5g-control-plane/templates/service-pcf.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: pcf
+  labels:
+    release: sd-core
+    app: pcf
+spec:
+  type: ClusterIP
+  selector:
+    release: sd-core
+    app: pcf
+  ports:
+  - name: sbi
+    port: 29507
+    protocol: TCP
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-pcf.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pcf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: pcf
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-pcf.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pcf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: pcf
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+      - patch
+    resources:
+      - statefulsets
+      - daemonsets
+      - jobs
+      - pods
+      - services
+      - endpoints
+      - configmaps
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-pcf.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pcf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: pcf
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pcf
+subjects:
+  - kind: ServiceAccount
+    name: pcf
+    namespace: omec
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-pcf.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pcf
+  labels:
+    release: sd-core
+    app: pcf
+spec:
+  replicas: 1
+  #serviceName: pcf-headless
+  selector:
+    matchLabels:
+      release: sd-core
+      app: pcf
+  template:
+    metadata:
+      labels:
+        release: sd-core
+        app: pcf
+    spec:
+      serviceAccountName: pcf
+      initContainers:
+      - name: wait-pcf-module
+        image: registry.opennetworking.org/docker.io/omecproject/pod-init:1.0.0
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'until nslookup pcf; do echo waiting for pcf; sleep 4; done;']
+      containers:
+      - name: pcf
+        image: registry.opennetworking.org/docker.io/omecproject/5gc-pcf:master-874bbe1
+        imagePullPolicy: IfNotPresent
+        stdin: true
+        tty: true
+        command: ["/free5gc/script/pcf-run.sh"]
+        env:
+        - name: GRPC_GO_LOG_VERBOSITY_LEVEL
+          value: "99"
+        - name: GRPC_GO_LOG_SEVERITY_LEVEL
+          value: "info"
+        - name: GRPC_TRACE
+          value: "all"
+        - name: GRPC_VERBOSITY
+          value: "debug"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MANAGED_BY_CONFIG_POD 
+          value: "true"
+        volumeMounts:
+        - name: run-script
+          mountPath: /free5gc/script/pcf-run.sh
+          subPath: pcf-run.sh
+        - name: nf-config
+          mountPath: /free5gc/config
+      volumes:
+      - name: run-script
+        configMap:
+          name: pcf
+          defaultMode: 493
+      - name: nf-config
+        configMap:
+          name: pcf
+          defaultMode: 493

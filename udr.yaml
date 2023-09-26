@@ -1,0 +1,252 @@
+---
+# Source: sd-core/charts/5g-control-plane/templates/configmap-udr.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: udr
+  labels:
+    release: sd-core
+    app: udr
+data:
+  udr-run.sh: |
+    #!/bin/sh
+    
+    # Copyright 2020-present Open Networking Foundation
+    #
+    # SPDX-License-Identifier: Apache-2.0
+    
+    set -xe
+    
+    cd /free5gc
+    
+    cat config/udrcfg.conf
+    
+    GOTRACEBACK=crash ./udr/udr -udrcfg config/udrcfg.conf
+    
+  udrcfg.conf: |-
+    configuration:
+      mongodb:
+        name: free5gc
+        url: mongodb://mongodb
+      nrfUri: http://nrf:29510
+      plmnSupportList:
+      - plmnId:
+          mcc: "208"
+          mnc: "93"
+      - plmnId:
+          mcc: "333"
+          mnc: "88"
+      sbi:
+        bindingIPv4: 0.0.0.0
+        port: 29504
+        registerIPv4: udr
+        scheme: http
+    info:
+      description: UDR initial local configuration
+      version: 1.0.0
+    logger:
+      AMF:
+        ReportCaller: false
+        debugLevel: info
+      AUSF:
+        ReportCaller: false
+        debugLevel: info
+      Aper:
+        ReportCaller: false
+        debugLevel: info
+      CommonConsumerTest:
+        ReportCaller: false
+        debugLevel: info
+      FSM:
+        ReportCaller: false
+        debugLevel: info
+      MongoDBLibrary:
+        ReportCaller: false
+        debugLevel: info
+      N3IWF:
+        ReportCaller: false
+        debugLevel: info
+      NAS:
+        ReportCaller: false
+        debugLevel: info
+      NGAP:
+        ReportCaller: false
+        debugLevel: info
+      NRF:
+        ReportCaller: false
+        debugLevel: info
+      NamfComm:
+        ReportCaller: false
+        debugLevel: info
+      NamfEventExposure:
+        ReportCaller: false
+        debugLevel: info
+      NsmfPDUSession:
+        ReportCaller: false
+        debugLevel: info
+      NudrDataRepository:
+        ReportCaller: false
+        debugLevel: info
+      OpenApi:
+        ReportCaller: false
+        debugLevel: info
+      PCF:
+        ReportCaller: false
+        debugLevel: info
+      PFCP:
+        ReportCaller: false
+        debugLevel: info
+      PathUtil:
+        ReportCaller: false
+        debugLevel: info
+      SMF:
+        ReportCaller: false
+        debugLevel: info
+      UDM:
+        ReportCaller: false
+        debugLevel: info
+      UDR:
+        ReportCaller: false
+        debugLevel: info
+      WEBUI:
+        ReportCaller: false
+        debugLevel: info
+---
+# Source: sd-core/charts/5g-control-plane/templates/service-udr.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: udr
+  labels:
+    release: sd-core
+    app: udr
+spec:
+  type: ClusterIP
+  selector:
+    release: sd-core
+    app: udr
+  ports:
+  - name: sbi
+    port: 29504
+    protocol: TCP
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-udr.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: udr
+  namespace: omec
+  labels:
+    release: sd-core
+    app: udr
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-udr.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: udr
+  namespace: omec
+  labels:
+    release: sd-core
+    app: udr
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+      - patch
+    resources:
+      - statefulsets
+      - daemonsets
+      - jobs
+      - pods
+      - services
+      - endpoints
+      - configmaps
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-udr.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: udr
+  namespace: omec
+  labels:
+    release: sd-core
+    app: udr
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: udr
+subjects:
+  - kind: ServiceAccount
+    name: udr
+    namespace: omec
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-udr.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: udr
+  labels:
+    release: sd-core
+    app: udr
+spec:
+  replicas: 1
+  #serviceName: udr-headless
+  selector:
+    matchLabels:
+      release: sd-core
+      app: udr
+  template:
+    metadata:
+      labels:
+        release: sd-core
+        app: udr
+    spec:
+      serviceAccountName: udr
+      initContainers:
+      - name: wait-udr-module
+        image: registry.opennetworking.org/docker.io/omecproject/pod-init:1.0.0
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'until nslookup udr; do echo waiting for udr; sleep 4; done;']
+      containers:
+      - name: udr
+        image: registry.opennetworking.org/docker.io/omecproject/5gc-udr:master-3756e35
+        imagePullPolicy: IfNotPresent
+        stdin: true
+        tty: true
+        command: ["/free5gc/script/udr-run.sh"]
+        env:
+        - name: GRPC_GO_LOG_VERBOSITY_LEVEL
+          value: "99"
+        - name: GRPC_GO_LOG_SEVERITY_LEVEL
+          value: "info"
+        - name: GRPC_TRACE
+          value: "all"
+        - name: GRPC_VERBOSITY
+          value: "debug"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MANAGED_BY_CONFIG_POD 
+          value: "true"
+        volumeMounts:
+        - name: run-script
+          mountPath: /free5gc/script/udr-run.sh
+          subPath: udr-run.sh
+        - name: nf-config
+          mountPath: /free5gc/config
+      volumes:
+      - name: run-script
+        configMap:
+          name: udr
+          defaultMode: 493
+      - name: nf-config
+        configMap:
+          name: udr
+          defaultMode: 493

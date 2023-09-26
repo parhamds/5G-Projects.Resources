@@ -1,0 +1,313 @@
+---
+# Source: sd-core/charts/5g-control-plane/templates/configmap-smf.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smf
+  labels:
+    release: sd-core
+    app: smf
+data:
+  smf-run.sh: |
+    #!/bin/sh
+    
+    # Copyright 2020-present Open Networking Foundation
+    #
+    # SPDX-License-Identifier: Apache-2.0
+    
+    set -xe
+    
+    cd /free5gc
+    
+    cat config/smfcfg.conf
+    cat uerouting/uerouting.conf
+    
+    GOTRACEBACK=crash ./smf/smf -smfcfg config/smfcfg.conf -uerouting uerouting/uerouting.conf
+    
+  smfcfg.conf: |-
+    configuration:
+      mongodb:
+        name: smf
+        url: mongodb://mongodb:27017
+      nrfUri: http://nrf:29510
+      pfcp:
+        addr: POD_IP
+      sbi:
+        bindingIPv4: 0.0.0.0
+        port: 29502
+        registerIPv4: smf
+        scheme: http
+        tls:
+          key: gofree5gc/support/TLS/smf.key
+          pem: gofree5gc/support/TLS/smf.pem
+      serviceNameList:
+      - nsmf-pdusession
+      - nsmf-event-exposure
+      smfName: SMF
+      snssaiInfos:
+      - dnnInfos:
+        - dnn: internet
+          dns:
+            ipv4: 8.8.8.8
+            ipv6: 2001:4860:4860::8888
+          ueSubnet: 172.250.0.0/16
+        sNssai:
+          sd: "010203"
+          sst: 1
+      userplane_information:
+        links:
+        - A: gNB1
+          B: UPF
+        up_nodes:
+          UPF:
+            interfaces:
+            - endpoints:
+              - upf
+              interfaceType: N3
+              networkInstance: internet
+            node_id: upf
+            sNssaiUpfInfos:
+            - dnnUpfInfoList:
+              - dnn: internet
+              plmnId:
+                mcc: "208"
+                mnc: "93"
+              sNssai:
+                sd: "010203"
+                sst: 1
+            - dnnUpfInfoList:
+              - dnn: internet
+              plmnId:
+                mcc: "208"
+                mnc: "93"
+              sNssai:
+                sd: "112233"
+                sst: 1
+            type: UPF
+          gNB1:
+            type: AN
+    info:
+      description: SMF initial local configuration
+      version: 1.0.0
+    logger:
+      AMF:
+        ReportCaller: false
+        debugLevel: info
+      AUSF:
+        ReportCaller: false
+        debugLevel: info
+      Aper:
+        ReportCaller: false
+        debugLevel: info
+      CommonConsumerTest:
+        ReportCaller: false
+        debugLevel: info
+      FSM:
+        ReportCaller: false
+        debugLevel: info
+      MongoDBLibrary:
+        ReportCaller: false
+        debugLevel: info
+      N3IWF:
+        ReportCaller: false
+        debugLevel: info
+      NAS:
+        ReportCaller: false
+        debugLevel: info
+      NGAP:
+        ReportCaller: false
+        debugLevel: info
+      NRF:
+        ReportCaller: false
+        debugLevel: info
+      NamfComm:
+        ReportCaller: false
+        debugLevel: info
+      NamfEventExposure:
+        ReportCaller: false
+        debugLevel: info
+      NsmfPDUSession:
+        ReportCaller: false
+        debugLevel: info
+      NudrDataRepository:
+        ReportCaller: false
+        debugLevel: info
+      OpenApi:
+        ReportCaller: false
+        debugLevel: info
+      PCF:
+        ReportCaller: false
+        debugLevel: info
+      PFCP:
+        ReportCaller: false
+        debugLevel: info
+      PathUtil:
+        ReportCaller: false
+        debugLevel: info
+      SMF:
+        ReportCaller: false
+        debugLevel: info
+      UDM:
+        ReportCaller: false
+        debugLevel: info
+      UDR:
+        ReportCaller: false
+        debugLevel: info
+      WEBUI:
+        ReportCaller: false
+        debugLevel: info
+  uerouting.conf: |-
+    info:
+      description: Routing information for UE
+      version: 1.0.0
+---
+# Source: sd-core/charts/5g-control-plane/templates/service-smf.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: smf
+  labels:
+    release: sd-core
+    app: smf
+spec:
+  type: ClusterIP
+  selector:
+    release: sd-core
+    app: smf
+  ports:
+  - name: pfcp
+    port: 8805
+    protocol: UDP
+  - name: prometheus-exporter
+    port: 9089
+    protocol: TCP
+  - name: sbi
+    port: 29502
+    protocol: TCP
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-smf.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: smf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: smf
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-smf.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: smf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: smf
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+      - patch
+    resources:
+      - statefulsets
+      - daemonsets
+      - jobs
+      - pods
+      - services
+      - endpoints
+      - configmaps
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-smf.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: smf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: smf
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: smf
+subjects:
+  - kind: ServiceAccount
+    name: smf
+    namespace: omec
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-smf.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smf
+  labels:
+    release: sd-core
+    app: smf
+spec:
+  replicas: 1
+  #serviceName: smf-headless
+  selector:
+    matchLabels:
+      release: sd-core
+      app: smf
+  template:
+    metadata:
+      labels:
+        release: sd-core
+        app: smf
+      annotations:
+        helm.sh/hook: pre-install
+        helm.sh/hook-weight: "5"
+        field.cattle.io/workloadMetrics: '[{"path":"/metrics","port":9089,"schema":"HTTP"}]'
+    spec:
+      serviceAccountName: smf
+      initContainers:
+      - name: wait-smf-module
+        image: registry.opennetworking.org/docker.io/omecproject/pod-init:1.0.0
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'until nslookup smf; do echo waiting for smf; sleep 4; done;']
+      containers:
+      - name: smf
+        image: registry.opennetworking.org/docker.io/omecproject/5gc-smf:master-7ef661b
+        imagePullPolicy: IfNotPresent
+        stdin: true
+        tty: true
+        command: ["/free5gc/script/smf-run.sh"]
+        env:
+        - name: GRPC_GO_LOG_VERBOSITY_LEVEL
+          value: "99"
+        - name: GRPC_GO_LOG_SEVERITY_LEVEL
+          value: "info"
+        - name: GRPC_TRACE
+          value: "all"
+        - name: GRPC_VERBOSITY
+          value: "debug"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MANAGED_BY_CONFIG_POD 
+          value: "true"
+        volumeMounts:
+        - name: run-script
+          mountPath: /free5gc/script/smf-run.sh
+          subPath: smf-run.sh
+        - name: nf-config
+          mountPath: /free5gc/uerouting
+        - name: nf-config
+          mountPath: /free5gc/config
+      volumes:
+      - name: run-script
+        configMap:
+          name: smf
+          defaultMode: 493
+      - name: nf-config
+        configMap:
+          name: smf
+          defaultMode: 493

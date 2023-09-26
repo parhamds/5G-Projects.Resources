@@ -1,0 +1,145 @@
+---
+# Source: sd-core/charts/5g-ran-sim/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: gnb-net
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName:  intel.com/intel_sriov_vfio
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "data",
+    "ipam": {
+        "type": "static"
+    }
+  }'
+---
+# Source: sd-core/charts/omec-user-plane/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: access-net
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "data",
+    "ipam": {
+        "type": "static"
+    },
+    "capabilities": { "mac": true}
+  }'
+---
+# Source: sd-core/charts/omec-user-plane/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: core-net
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "data",
+    "ipam": {
+        "type": "static"
+    },
+    "capabilities": { "mac": true}
+  }'
+---
+# Source: sd-core/charts/omec-user-plane/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: enterlb-net
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "data",
+    "ipam": {
+        "type": "static"
+    },
+    "capabilities": { "mac": true}
+  }'
+---
+# Source: sd-core/charts/omec-user-plane/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: lb-upf1-net
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "data",
+    "ipam": {
+        "type": "static"
+    },
+    "capabilities": { "mac": true}
+  }'
+---
+# Source: sd-core/charts/omec-user-plane/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: lb-upf2-net
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "data",
+    "ipam": {
+        "type": "static"
+    },
+    "capabilities": { "mac": true}
+  }'
+---
+# Source: sd-core/charts/omec-user-plane/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: core-upf1-net
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "data",
+    "ipam": {
+        "type": "static"
+    },
+    "capabilities": { "mac": true}
+  }'
+---
+# Source: sd-core/charts/omec-user-plane/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: core-upf2-net
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "data",
+    "ipam": {
+        "type": "static"
+    },
+    "capabilities": { "mac": true}
+  }'
+---
+# Source: sd-core/charts/omec-user-plane/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: exitlb-net
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "data",
+    "ipam": {
+        "type": "static"
+    },
+    "capabilities": { "mac": true}
+  }'

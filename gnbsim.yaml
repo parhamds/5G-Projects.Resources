@@ -1,0 +1,287 @@
+---
+# Source: sd-core/charts/5g-ran-sim/templates/configmap-gnbsim.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gnbsim
+  labels:
+    release: sd-core
+    app: gnbsim
+data:
+  gnbsim-run.sh: |
+    #!/bin/sh
+    
+    # Copyright 2020-present Open Networking Foundation
+    #
+    # SPDX-License-Identifier: Apache-2.0
+    
+    set -xe
+    
+    cd /gnbsim
+    cat ./config/gnb.conf
+    cat /etc/hosts
+    ip route replace 192.168.252.3/32 via 192.168.251.1
+    
+    sleep infinity
+    
+  gnb.conf: |-
+    configuration:
+      gnbs:
+        gnb1:
+          defaultAmf:
+            hostName: amf
+            port: 38412
+          globalRanId:
+            gNbId:
+              bitLength: 24
+              gNBValue: "000102"
+            plmnId:
+              mcc: 208
+              mnc: 93
+          n2Port: 9487
+          n3IpAddr: 192.168.251.5
+          n3Port: 2152
+          name: gnb1
+          supportedTaList:
+          - broadcastPlmnList:
+            - plmnId:
+                mcc: 208
+                mnc: 93
+              taiSliceSupportList:
+              - sd: "010203"
+                sst: 1
+            tac: "000001"
+      networkTopo:
+      - upfAddr: 192.168.252.3/32
+        upfGw: 192.168.251.1
+      profiles:
+      - defaultAs: 192.168.254.1
+        enable: false
+        gnbName: gnb1
+        plmnId:
+          mcc: 208
+          mnc: 93
+        profileName: profile1
+        profileType: register
+        startImsi: 208930100007487
+        ueCount: 5
+      - dataPktCount: 5
+        defaultAs: 192.168.254.1
+        enable: true
+        gnbName: gnb1
+        plmnId:
+          mcc: 208
+          mnc: 93
+        profileName: profile2
+        profileType: pdusessest
+        perUserTimeout: 10
+        startImsi: 208930100007492
+        ueCount: 5
+      - defaultAs: 192.168.254.1
+        enable: false
+        gnbName: gnb1
+        plmnId:
+          mcc: 208
+          mnc: 93
+        profileName: profile3
+        profileType: anrelease
+        startImsi: 208930100007497
+        ueCount: 5
+      - defaultAs: 192.168.254.1
+        enable: false
+        gnbName: gnb1
+        plmnId:
+          mcc: 208
+          mnc: 93
+        profileName: profile4
+        profileType: uetriggservicereq
+        startImsi: 208930100007497
+        ueCount: 5
+      - defaultAs: 192.168.254.1
+        enable: false
+        gnbName: gnb1
+        plmnId:
+          mcc: 208
+          mnc: 93
+        profileName: profile5
+        profileType: deregister
+        startImsi: 208930100007497
+        ueCount: 5
+      - defaultAs: 192.168.254.1
+        enable: false
+        gnbName: gnb1
+        perUserTimeout: 100
+        plmnId:
+          mcc: 208
+          mnc: 93
+        profileName: profile6
+        profileType: nwtriggeruedereg
+        startImsi: 208930100007497
+        ueCount: 5
+      - defaultAs: 192.168.254.1
+        enable: false
+        gnbName: gnb1
+        plmnId:
+          mcc: 208
+          mnc: 93
+        profileName: profile7
+        profileType: uereqpdusessrelease
+        startImsi: 208930100007497
+        ueCount: 5
+      singleInterface: false
+    info:
+      description: gNodeB sim initial configuration
+      version: 1.0.0
+    logger:
+      logLevel: trace
+---
+# Source: sd-core/charts/5g-ran-sim/templates/service-gnbsim.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: gnbsim
+  labels:
+    release: sd-core
+    app: gnbsim
+spec:
+  type: ClusterIP
+  selector:
+    release: sd-core
+    app: gnbsim
+  ports:
+  - name: ngapp
+    port: 38412
+    protocol: SCTP
+  - name: profile-http
+    port: 5000
+    protocol: TCP
+
+---
+# Source: sd-core/charts/5g-ran-sim/templates/statefulset-gnbsim.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gnbsim
+  namespace: omec
+  labels:
+    release: sd-core
+    app: gnbsim
+---
+# Source: sd-core/charts/5g-ran-sim/templates/statefulset-gnbsim.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gnbsim
+  namespace: omec
+  labels:
+    release: sd-core
+    app: gnbsim
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+      - patch
+    resources:
+      - statefulsets
+      - daemonsets
+      - jobs
+      - pods
+      - services
+      - endpoints
+      - configmaps
+---
+# Source: sd-core/charts/5g-ran-sim/templates/statefulset-gnbsim.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gnbsim
+  namespace: omec
+  labels:
+    release: sd-core
+    app: gnbsim
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: gnbsim
+subjects:
+  - kind: ServiceAccount
+    name: gnbsim
+    namespace: omec
+---
+# Source: sd-core/charts/5g-ran-sim/templates/statefulset-gnbsim.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gnbsim
+  labels:
+    release: sd-core
+    app: gnbsim
+spec:
+  replicas: 1
+  serviceName: gnbsim-headless
+  selector:
+    matchLabels:
+      release: sd-core
+      app: gnbsim
+  template:
+    metadata:
+      labels:
+        release: sd-core
+        app: gnbsim
+      annotations:
+        k8s.v1.cni.cncf.io/networks: '[
+           { 
+               "name": "gnb-net",
+               "interface": "gnb",
+               "ips": ["192.168.251.5/24"]
+           }
+         ]'
+    spec:
+      serviceAccountName: gnbsim
+
+      initContainers:
+      - name: wait-amf-module
+        image: registry.opennetworking.org/docker.io/omecproject/pod-init:1.0.0
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'until nslookup amf; do echo waiting for nrf; sleep 4; done;']
+      containers:
+      - name: gnbsim
+        image: registry.opennetworking.org/docker.io/omecproject/5gc-gnbsim:main-6e34bd2
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        stdin: true
+        tty: true
+        command: ["/opt/cp/scripts/gnbsim-run.sh"]
+        env:
+        - name: MEM_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: gnbsim
+              resource: limits.memory
+              divisor: 1Mi
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+        - name: cp-script
+          mountPath: /opt/cp/scripts/gnbsim-run.sh
+          subPath: gnbsim-run.sh
+        - name: cp-config
+          mountPath: /gnbsim/config
+      volumes:
+      - name: cp-script
+        configMap:
+          name: gnbsim
+          defaultMode: 493
+      - name: cp-config
+        configMap:
+          name: gnbsim
+          defaultMode: 420

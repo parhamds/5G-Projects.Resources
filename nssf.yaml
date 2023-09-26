@@ -1,0 +1,263 @@
+---
+# Source: sd-core/charts/5g-control-plane/templates/configmap-nssf.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nssf
+  labels:
+    release: sd-core
+    app: nssf
+data:
+  nssf-run.sh: |
+    #!/bin/sh
+    
+    # Copyright 2020-present Open Networking Foundation
+    #
+    # SPDX-License-Identifier: Apache-2.0
+    
+    set -xe
+    
+    cd /free5gc
+    
+    cat config/nssfcfg.conf
+    
+    GOTRACEBACK=crash ./nssf/nssf -nssfcfg config/nssfcfg.conf
+    
+  nssfcfg.conf: |-
+    configuration:
+      nrfUri: http://nrf:29510
+      nsiList:
+      - nsiInformationList:
+        - nrfId: http://nrf:29510/nnrf-nfm/v1/nf-instances
+          nsiId: 22
+        snssai:
+          sd: "010203"
+          sst: 1
+      nssfName: NSSF
+      sbi:
+        bindingIPv4: 0.0.0.0
+        port: 29531
+        registerIPv4: nssf
+        scheme: http
+      serviceNameList:
+      - nnssf-nsselection
+      - nnssf-nssaiavailability
+      supportedNssaiInPlmnList:
+      - plmnId:
+          mcc: "208"
+          mnc: "93"
+        supportedSnssaiList:
+        - sd: "010203"
+          sst: 1
+      supportedPlmnList:
+      - mcc: "208"
+        mnc: "93"
+    info:
+      description: NSSF initial local configuration
+      version: 1.0.0
+    logger:
+      AMF:
+        ReportCaller: false
+        debugLevel: info
+      AUSF:
+        ReportCaller: false
+        debugLevel: info
+      Aper:
+        ReportCaller: false
+        debugLevel: info
+      CommonConsumerTest:
+        ReportCaller: false
+        debugLevel: info
+      FSM:
+        ReportCaller: false
+        debugLevel: info
+      MongoDBLibrary:
+        ReportCaller: false
+        debugLevel: info
+      N3IWF:
+        ReportCaller: false
+        debugLevel: info
+      NAS:
+        ReportCaller: false
+        debugLevel: info
+      NGAP:
+        ReportCaller: false
+        debugLevel: info
+      NRF:
+        ReportCaller: false
+        debugLevel: info
+      NamfComm:
+        ReportCaller: false
+        debugLevel: info
+      NamfEventExposure:
+        ReportCaller: false
+        debugLevel: info
+      NsmfPDUSession:
+        ReportCaller: false
+        debugLevel: info
+      NudrDataRepository:
+        ReportCaller: false
+        debugLevel: info
+      OpenApi:
+        ReportCaller: false
+        debugLevel: info
+      PCF:
+        ReportCaller: false
+        debugLevel: info
+      PFCP:
+        ReportCaller: false
+        debugLevel: info
+      PathUtil:
+        ReportCaller: false
+        debugLevel: info
+      SMF:
+        ReportCaller: false
+        debugLevel: info
+      UDM:
+        ReportCaller: false
+        debugLevel: info
+      UDR:
+        ReportCaller: false
+        debugLevel: info
+      WEBUI:
+        ReportCaller: false
+        debugLevel: info
+---
+# Source: sd-core/charts/5g-control-plane/templates/service-nssf.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nssf
+  labels:
+    release: sd-core
+    app: nssf
+spec:
+  type: ClusterIP
+  selector:
+    release: sd-core
+    app: nssf
+  ports:
+  - name: sbi
+    port: 29531
+    protocol: TCP
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-nssf.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nssf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: nssf
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-nssf.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nssf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: nssf
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+      - patch
+    resources:
+      - statefulsets
+      - daemonsets
+      - jobs
+      - pods
+      - services
+      - endpoints
+      - configmaps
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-nssf.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nssf
+  namespace: omec
+  labels:
+    release: sd-core
+    app: nssf
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: nssf
+subjects:
+  - kind: ServiceAccount
+    name: nssf
+    namespace: omec
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-nssf.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nssf
+  labels:
+    release: sd-core
+    app: nssf
+spec:
+  replicas: 1
+  #serviceName: nssf-headless
+  selector:
+    matchLabels:
+      release: sd-core
+      app: nssf
+  template:
+    metadata:
+      labels:
+        release: sd-core
+        app: nssf
+    spec:
+      serviceAccountName: nssf
+      initContainers:
+      - name: wait-nssf-module
+        image: registry.opennetworking.org/docker.io/omecproject/pod-init:1.0.0
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'until nslookup nssf; do echo waiting for nssf; sleep 4; done;']
+      containers:
+      - name: nssf
+        image: registry.opennetworking.org/docker.io/omecproject/5gc-nssf:master-e751140
+        imagePullPolicy: IfNotPresent
+        stdin: true
+        tty: true
+        command: ["/free5gc/script/nssf-run.sh"]
+        env:
+        - name: GRPC_GO_LOG_VERBOSITY_LEVEL
+          value: "99"
+        - name: GRPC_GO_LOG_SEVERITY_LEVEL
+          value: "info"
+        - name: GRPC_TRACE
+          value: "all"
+        - name: GRPC_VERBOSITY
+          value: "debug"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MANAGED_BY_CONFIG_POD 
+          value: "true"
+        volumeMounts:
+        - name: run-script
+          mountPath: /free5gc/script/nssf-run.sh
+          subPath: nssf-run.sh
+        - name: nf-config
+          mountPath: /free5gc/config
+      volumes:
+      - name: run-script
+        configMap:
+          name: nssf
+          defaultMode: 493
+      - name: nf-config
+        configMap:
+          name: nssf
+          defaultMode: 493

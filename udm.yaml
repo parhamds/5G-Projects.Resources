@@ -1,0 +1,270 @@
+---
+# Source: sd-core/charts/5g-control-plane/templates/configmap-udm.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: udm
+  labels:
+    release: sd-core
+    app: udm
+data:
+  udm-run.sh: |
+    #!/bin/sh
+    
+    # Copyright 2020-present Open Networking Foundation
+    #
+    # SPDX-License-Identifier: Apache-2.0
+    
+    set -xe
+    
+    cd /free5gc
+    
+    cat config/udmcfg.conf
+    
+    GOTRACEBACK=crash ./udm/udm -udmcfg config/udmcfg.conf
+    
+  udmcfg.conf: |-
+    configuration:
+      keys:
+        udmProfileAHNPrivateKey: c53c22208b61860b06c62e5406a7b330c2b577aa5558981510d128247d38bd1d
+        udmProfileAHNPublicKey: 5a8d38864820197c3394b92613b20b91633cbd897119273bf8e4a6f4eec0a650
+        udmProfileBHNPrivateKey: F1AB1074477EBCC7F554EA1C5FC368B1616730155E0041AC447D6301975FECDA
+        udmProfileBHNPublicKey: 0472DA71976234CE833A6907425867B82E074D44EF907DFB4B3E21C1C2256EBCD15A7DED52FCBB097A4ED250E036C7B9C8C7004C4EEDC4F068CD7BF8D3F900E3B4
+      nrfUri: http://nrf:29510
+      plmnList:
+      - plmnId:
+          mcc: "208"
+          mnc: "93"
+      - plmnId:
+          mcc: "222"
+          mnc: "88"
+      sbi:
+        bindingIPv4: 0.0.0.0
+        port: 29503
+        registerIPv4: udm
+        scheme: http
+        tls:
+          key: free5gc/support/TLS/udm.key
+          log: free5gc/udmsslkey.log
+          pem: free5gc/support/TLS/udm.pem
+      serviceNameList:
+      - nudm-sdm
+      - nudm-uecm
+      - nudm-ueau
+      - nudm-ee
+      - nudm-pp
+    info:
+      description: UDM initial local configuration
+      version: 1.0.0
+    logger:
+      AMF:
+        ReportCaller: false
+        debugLevel: info
+      AUSF:
+        ReportCaller: false
+        debugLevel: info
+      Aper:
+        ReportCaller: false
+        debugLevel: info
+      CommonConsumerTest:
+        ReportCaller: false
+        debugLevel: info
+      FSM:
+        ReportCaller: false
+        debugLevel: info
+      MongoDBLibrary:
+        ReportCaller: false
+        debugLevel: info
+      N3IWF:
+        ReportCaller: false
+        debugLevel: info
+      NAS:
+        ReportCaller: false
+        debugLevel: info
+      NGAP:
+        ReportCaller: false
+        debugLevel: info
+      NRF:
+        ReportCaller: false
+        debugLevel: info
+      NamfComm:
+        ReportCaller: false
+        debugLevel: info
+      NamfEventExposure:
+        ReportCaller: false
+        debugLevel: info
+      NsmfPDUSession:
+        ReportCaller: false
+        debugLevel: info
+      NudrDataRepository:
+        ReportCaller: false
+        debugLevel: info
+      OpenApi:
+        ReportCaller: false
+        debugLevel: info
+      PCF:
+        ReportCaller: false
+        debugLevel: info
+      PFCP:
+        ReportCaller: false
+        debugLevel: info
+      PathUtil:
+        ReportCaller: false
+        debugLevel: info
+      SMF:
+        ReportCaller: false
+        debugLevel: info
+      UDM:
+        ReportCaller: false
+        debugLevel: info
+      UDR:
+        ReportCaller: false
+        debugLevel: info
+      WEBUI:
+        ReportCaller: false
+        debugLevel: info
+---
+# Source: sd-core/charts/5g-control-plane/templates/service-udm.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: udm
+  labels:
+    release: sd-core
+    app: udm
+spec:
+  type: ClusterIP
+  selector:
+    release: sd-core
+    app: udm
+  ports:
+  - name: sbi
+    port: 29503
+    protocol: TCP
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-udm.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: udm
+  namespace: omec
+  labels:
+    release: sd-core
+    app: udm
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-udm.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: udm
+  namespace: omec
+  labels:
+    release: sd-core
+    app: udm
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+      - patch
+    resources:
+      - statefulsets
+      - daemonsets
+      - jobs
+      - pods
+      - services
+      - endpoints
+      - configmaps
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-udm.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: udm
+  namespace: omec
+  labels:
+    release: sd-core
+    app: udm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: udm
+subjects:
+  - kind: ServiceAccount
+    name: udm
+    namespace: omec
+---
+# Source: sd-core/charts/5g-control-plane/templates/deployment-udm.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: udm
+  labels:
+    release: sd-core
+    app: udm
+spec:
+  replicas: 1
+  #serviceName: udm-headless
+  selector:
+    matchLabels:
+      release: sd-core
+      app: udm
+  template:
+    metadata:
+      labels:
+        release: sd-core
+        app: udm
+    spec:
+      serviceAccountName: udm
+      initContainers:
+      - name: wait-udm-module
+        image: registry.opennetworking.org/docker.io/omecproject/pod-init:1.0.0
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'until nslookup udm; do echo waiting for udm; sleep 4; done;']
+      - name: wait-udr-module
+        image: registry.opennetworking.org/docker.io/omecproject/pod-init:1.0.0
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'until nslookup udr; do echo waiting for udr; sleep 4; done;']
+      containers:
+      - name: udm
+        image: registry.opennetworking.org/docker.io/omecproject/5gc-udm:master-15369ab
+        imagePullPolicy: IfNotPresent
+        stdin: true
+        tty: true
+        command: ["/free5gc/script/udm-run.sh"]
+        env:
+        - name: GRPC_GO_LOG_VERBOSITY_LEVEL
+          value: "99"
+        - name: GRPC_GO_LOG_SEVERITY_LEVEL
+          value: "info"
+        - name: GRPC_TRACE
+          value: "all"
+        - name: GRPC_VERBOSITY
+          value: "debug"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MANAGED_BY_CONFIG_POD 
+          value: "true"
+        volumeMounts:
+        - name: run-script
+          mountPath: /free5gc/script/udm-run.sh
+          subPath: udm-run.sh
+        - name: nf-config
+          mountPath: /free5gc/config
+      volumes:
+      - name: run-script
+        configMap:
+          name: udm
+          defaultMode: 493
+      - name: nf-config
+        configMap:
+          name: udm
+          defaultMode: 493
+      - name: config-dir
+        emptyDir: {}
