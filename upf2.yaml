@@ -60,6 +60,9 @@ spec:
   - name: prometheus-exporter
     protocol: TCP
     port: 8080
+  - name: gw-interaction
+    protocol: TCP
+    port: 8081
 ---
 # Source: sd-core/charts/omec-user-plane/templates/statefulset-upf.yaml
 apiVersion: apps/v1
