@@ -62,7 +62,7 @@ spec:
     port: 8080
   - name: gw-interaction
     protocol: TCP
-    port: 8081
+    port: 8082
 ---
 # Source: sd-core/charts/omec-user-plane/templates/statefulset-upf.yaml
 apiVersion: apps/v1
