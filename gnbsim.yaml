@@ -74,7 +74,7 @@ data:
           mnc: 93
         profileName: profile2
         profileType: pdusessest
-        perUserTimeout: 10
+        perUserTimeout: 180
         startImsi: 208930100007487
         ueCount: 5
       - defaultAs: 192.168.254.1
