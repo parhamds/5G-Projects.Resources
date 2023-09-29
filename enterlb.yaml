@@ -53,6 +53,11 @@ spec:
             "name": "lb-upf2-net",
             "interface": "upf102",
             "ips": ["192.168.252.102/32"]
+          },
+          {
+            "name": "lb-upf3-net",
+            "interface": "upf103",
+            "ips": ["192.168.252.103/32"]
           }
         ]'
     spec:

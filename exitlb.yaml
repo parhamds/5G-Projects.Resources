@@ -53,6 +53,11 @@ spec:
             "name": "core-upf2-net",
             "interface": "upf102",
             "ips": ["192.168.250.102/32"]
+          },
+          {
+            "name": "core-upf3-net",
+            "interface": "upf103",
+            "ips": ["192.168.250.103/32"]
           }
         ]'
     spec:
