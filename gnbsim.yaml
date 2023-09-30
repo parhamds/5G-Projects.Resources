@@ -65,7 +65,7 @@ data:
         profileType: register
         startImsi: 208930100007487
         ueCount: 5
-      - dataPktCount: 50000
+      - dataPktCount: 5
         defaultAs: 192.168.254.1
         enable: true
         gnbName: gnb1
