@@ -77,6 +77,9 @@ spec:
         args:
         - echo 1 > /proc/sys/net/ipv4/ip_forward;
           ip route replace 192.168.251.0/24 via 192.168.255.1;
+          iptables -F;
+          iptables -A INPUT -p arp --source 192.168.250.3 -j DROP;
+          iptables -A INPUT -p arp --source 192.168.252.3 -j DROP;
           echo 101 lb-upf1 >> /etc/iproute2/rt_tables;
           echo 102 lb-upf2 >> /etc/iproute2/rt_tables;
           echo 103 lb-upf3 >> /etc/iproute2/rt_tables;
@@ -86,5 +89,4 @@ spec:
           ip route add 192.168.252.3 dev upf101 table lb-upf1;
           ip route add 192.168.252.3 dev upf102 table lb-upf2;
           ip route add 192.168.252.3 dev upf103 table lb-upf3;
-          iptables -F;
           ./enterlb;
