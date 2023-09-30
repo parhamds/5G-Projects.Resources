@@ -66,7 +66,7 @@ spec:
         - name: aether.registry
       containers:
       - name: pfcp-agent
-        image: "parhamds/enterlb:v0.0.42"
+        image: "parhamds/enterlb:v0.0.43"
         imagePullPolicy: "IfNotPresent"
         securityContext:
           privileged: true
