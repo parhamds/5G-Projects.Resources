@@ -87,6 +87,4 @@ spec:
           ip route add 192.168.252.3 dev upf102 table lb-upf2;
           ip route add 192.168.252.3 dev upf103 table lb-upf3;
           iptables -F;
-          iptables -A INPUT -p arp --source 192.168.250.3 -j DROP;
-          iptables -A INPUT -p arp --source 192.168.252.3 -j DROP;
           ./enterlb;
