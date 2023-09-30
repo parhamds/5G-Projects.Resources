@@ -79,9 +79,12 @@ spec:
           ip route replace 192.168.251.0/24 via 192.168.255.1;
           echo 101 lb-upf1 >> /etc/iproute2/rt_tables;
           echo 102 lb-upf2 >> /etc/iproute2/rt_tables;
+          echo 103 lb-upf3 >> /etc/iproute2/rt_tables;
           ip rule add fwmark 101 table lb-upf1;
           ip rule add fwmark 102 table lb-upf2;
+          ip rule add fwmark 103 table lb-upf3;
           ip route add 192.168.252.3 dev upf101 table lb-upf1;
           ip route add 192.168.252.3 dev upf102 table lb-upf2;
+          ip route add 192.168.252.3 dev upf103 table lb-upf3;
           iptables -F;
           ./enterlb;
