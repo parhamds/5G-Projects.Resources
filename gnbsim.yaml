@@ -76,7 +76,7 @@ data:
         profileType: pdusessest
         perUserTimeout: 10
         startImsi: 208930100007487
-        ueCount: 6
+        ueCount: 12
       - defaultAs: 192.168.254.1
         enable: false
         gnbName: gnb1
