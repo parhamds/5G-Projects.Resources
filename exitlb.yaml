@@ -45,17 +45,17 @@ spec:
             "ips": ["192.168.254.2/24"]
           },
           {
-            "name": "core-upf1-net",
+            "name": "core-upf101-net",
             "interface": "upf101",
             "ips": ["192.168.250.101/32"]
           },
           {
-            "name": "core-upf2-net",
+            "name": "core-upf102-net",
             "interface": "upf102",
             "ips": ["192.168.250.102/32"]
           },
           {
-            "name": "core-upf3-net",
+            "name": "core-upf103-net",
             "interface": "upf103",
             "ips": ["192.168.250.103/32"]
           }
@@ -80,16 +80,16 @@ spec:
           iptables -F;
           arptables -A INPUT -s 192.168.250.3 -d 192.168.250.0/24 -j DROP;
           arptables -A INPUT -s 192.168.252.3 -d 192.168.252.0/24 -j DROP;
-          echo 101 lb-upf1 >> /etc/iproute2/rt_tables;
-          echo 102 lb-upf2 >> /etc/iproute2/rt_tables;
-          echo 103 lb-upf3 >> /etc/iproute2/rt_tables;
-          ip rule add fwmark 101 table lb-upf1;
-          ip rule add fwmark 102 table lb-upf2;
-          ip rule add fwmark 103 table lb-upf3;
-          ip route add 172.250.0.0/16 dev upf101 table lb-upf1;
-          ip route add 172.250.0.0/16 dev upf102 table lb-upf2;
-          ip route add 172.250.0.0/16 dev upf103 table lb-upf3;
-          ip route add 192.168.250.3 dev upf101 table lb-upf1;
-          ip route add 192.168.250.3 dev upf102 table lb-upf2;
-          ip route add 192.168.250.3 dev upf103 table lb-upf3;
+          echo 101 lb-upf101 >> /etc/iproute2/rt_tables;
+          echo 102 lb-upf102 >> /etc/iproute2/rt_tables;
+          echo 103 lb-upf103 >> /etc/iproute2/rt_tables;
+          ip rule add fwmark 101 table lb-upf101;
+          ip rule add fwmark 102 table lb-upf102;
+          ip rule add fwmark 103 table lb-upf103;
+          ip route add 172.250.0.0/16 dev upf101 table lb-upf101;
+          ip route add 172.250.0.0/16 dev upf102 table lb-upf102;
+          ip route add 172.250.0.0/16 dev upf103 table lb-upf103;
+          ip route add 192.168.250.3 dev upf101 table lb-upf101;
+          ip route add 192.168.250.3 dev upf102 table lb-upf102;
+          ip route add 192.168.250.3 dev upf103 table lb-upf103;
           ./exitlb;

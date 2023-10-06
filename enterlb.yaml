@@ -45,17 +45,17 @@ spec:
             "ips": ["192.168.255.2/24"]
           },
           {
-            "name": "lb-upf1-net",
+            "name": "lb-upf101-net",
             "interface": "upf101",
             "ips": ["192.168.252.101/32"]
           },
           {
-            "name": "lb-upf2-net",
+            "name": "lb-upf102-net",
             "interface": "upf102",
             "ips": ["192.168.252.102/32"]
           },
           {
-            "name": "lb-upf3-net",
+            "name": "lb-upf103-net",
             "interface": "upf103",
             "ips": ["192.168.252.103/32"]
           }
@@ -80,13 +80,13 @@ spec:
           iptables -F;
           arptables -A INPUT -s 192.168.250.3 -d 192.168.250.0/24 -j DROP;
           arptables -A INPUT -s 192.168.252.3 -d 192.168.252.0/24 -j DROP;
-          echo 101 lb-upf1 >> /etc/iproute2/rt_tables;
-          echo 102 lb-upf2 >> /etc/iproute2/rt_tables;
-          echo 103 lb-upf3 >> /etc/iproute2/rt_tables;
-          ip rule add fwmark 101 table lb-upf1;
-          ip rule add fwmark 102 table lb-upf2;
-          ip rule add fwmark 103 table lb-upf3;
-          ip route add 192.168.252.3 dev upf101 table lb-upf1;
-          ip route add 192.168.252.3 dev upf102 table lb-upf2;
-          ip route add 192.168.252.3 dev upf103 table lb-upf3;
+          echo 101 lb-upf101 >> /etc/iproute2/rt_tables;
+          echo 102 lb-upf102 >> /etc/iproute2/rt_tables;
+          echo 103 lb-upf103 >> /etc/iproute2/rt_tables;
+          ip rule add fwmark 101 table lb-upf101;
+          ip rule add fwmark 102 table lb-upf102;
+          ip rule add fwmark 103 table lb-upf103;
+          ip route add 192.168.252.3 dev upf101 table lb-upf101;
+          ip route add 192.168.252.3 dev upf102 table lb-upf102;
+          ip route add 192.168.252.3 dev upf103 table lb-upf103;
           ./enterlb;

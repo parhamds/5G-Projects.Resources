@@ -68,7 +68,7 @@ spec:
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
-  name: lb-upf1-net
+  name: lb-upf101-net
 spec:
   config: '{
     "cniVersion": "0.3.1",
@@ -84,7 +84,7 @@ spec:
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
-  name: lb-upf2-net
+  name: lb-upf102-net
 spec:
   config: '{
     "cniVersion": "0.3.1",
@@ -100,7 +100,7 @@ spec:
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
-  name: lb-upf3-net
+  name: lb-upf103-net
 spec:
   config: '{
     "cniVersion": "0.3.1",
@@ -116,7 +116,7 @@ spec:
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
-  name: core-upf1-net
+  name: core-upf101-net
 spec:
   config: '{
     "cniVersion": "0.3.1",
@@ -132,7 +132,7 @@ spec:
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
-  name: core-upf2-net
+  name: core-upf102-net
 spec:
   config: '{
     "cniVersion": "0.3.1",
@@ -148,7 +148,7 @@ spec:
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
-  name: core-upf3-net
+  name: core-upf103-net
 spec:
   config: '{
     "cniVersion": "0.3.1",
