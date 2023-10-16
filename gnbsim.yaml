@@ -65,7 +65,7 @@ data:
         profileType: register
         startImsi: 208930100007487
         ueCount: 5
-      - dataPktCount: 5
+      - dataPktCount: 50000
         defaultAs: 192.168.254.1
         enable: true
         gnbName: gnb1
@@ -74,9 +74,9 @@ data:
           mnc: 93
         profileName: profile2
         profileType: pdusessest
-        perUserTimeout: 10
+        perUserTimeout: 90
         startImsi: 208930100007487
-        ueCount: 12
+        ueCount: 2
       - defaultAs: 192.168.254.1
         enable: false
         gnbName: gnb1
