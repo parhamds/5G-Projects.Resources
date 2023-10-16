@@ -110,7 +110,7 @@ data:
         sequenceNumber: 16f3b3f70fc2
         startImsi: 208930100007487
         ueCount: 5
-      - dataPktCount: 50
+      - dataPktCount: 50000
         defaultAs: 192.168.254.1
         enable: true
         execInParallel: true
@@ -125,7 +125,7 @@ data:
         profileType: pdusessest
         sequenceNumber: 16f3b3f70fc2
         startImsi: 208930100007487
-        ueCount: 10
+        ueCount: 100
       - defaultAs: 192.168.254.1
         enable: false
         execInParallel: false
