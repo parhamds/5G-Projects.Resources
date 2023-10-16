@@ -117,7 +117,7 @@ data:
         gnbName: gnb1
         key: 5122250214c33e723a5dd523fc145fc0
         opc: 981d464c7c52eb6e5036234984ad0bcf
-        perUserTimeout: 100
+        perUserTimeout: 300
         plmnId:
           mcc: 208
           mnc: 93
@@ -132,7 +132,7 @@ data:
         gnbName: gnb1
         key: 5122250214c33e723a5dd523fc145fc0
         opc: 981d464c7c52eb6e5036234984ad0bcf
-        perUserTimeout: 300
+        perUserTimeout: 100
         plmnId:
           mcc: 208
           mnc: 93
