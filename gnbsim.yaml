@@ -76,7 +76,8 @@ data:
         profileType: pdusessest
         perUserTimeout: 90
         startImsi: 208930100007487
-        ueCount: 2
+        ueCount: 100
+        execInParallel: true
       - defaultAs: 192.168.254.1
         enable: false
         gnbName: gnb1
