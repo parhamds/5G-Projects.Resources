@@ -21,11 +21,44 @@ data:
     cat ./config/gnb.conf
     cat /etc/hosts
     ip route replace 192.168.252.3/32 via 192.168.251.1
-    
     sleep infinity
     
   gnb.conf: |-
     configuration:
+      customProfiles:
+        customProfiles1:
+          defaultAs: 192.168.254.1
+          enable: false
+          execInParallel: false
+          gnbName: gnb1
+          iterations:
+          - "1": REGISTRATION-PROCEDURE 5
+            "2": PDU-SESSION-ESTABLISHMENT-PROCEDURE 5
+            "3": USER-DATA-PACKET-GENERATION-PROCEDURE 10
+            name: iteration1
+            next: iteration2
+          - "1": AN-RELEASE-PROCEDURE 10
+            "2": UE-TRIGGERED-SERVICE-REQUEST-PROCEDURE 5
+            name: iteration2
+            next: iteration3
+            repeat: 0
+          - "1": UE-INITIATED-DEREGISTRATION-PROCEDURE 10
+            name: iteration3
+            next: quit
+            repeat: 0
+          key: 5122250214c33e723a5dd523fc145fc0
+          opc: 981d464c7c52eb6e5036234984ad0bcf
+          plmnId:
+            mcc: 208
+            mnc: 93
+          profileName: custom1
+          profileType: custom
+          sequenceNumber: 16f3b3f70fc2
+          startImsi: 208930100007487
+          startiteration: iteration1
+          stepTrigger: false
+          ueCount: 30
+      execInParallel: false
       gnbs:
         gnb1:
           defaultAmf:
@@ -51,90 +84,149 @@ data:
               - sd: "010203"
                 sst: 1
             tac: "000001"
+      goProfile:
+        enable: false
+        port: 5000
+      httpServer:
+        enable: false
+        ipAddr: POD_IP
+        port: 6000
       networkTopo:
       - upfAddr: 192.168.252.3/32
         upfGw: 192.168.251.1
       profiles:
       - defaultAs: 192.168.254.1
         enable: false
+        execInParallel: false
         gnbName: gnb1
+        key: 5122250214c33e723a5dd523fc145fc0
+        opc: 981d464c7c52eb6e5036234984ad0bcf
+        perUserTimeout: 100
         plmnId:
           mcc: 208
           mnc: 93
         profileName: profile1
         profileType: register
+        sequenceNumber: 16f3b3f70fc2
         startImsi: 208930100007487
         ueCount: 5
-      - dataPktCount: 50000
+      - dataPktCount: 5
         defaultAs: 192.168.254.1
         enable: true
+        execInParallel: false
         gnbName: gnb1
+        key: 5122250214c33e723a5dd523fc145fc0
+        opc: 981d464c7c52eb6e5036234984ad0bcf
+        perUserTimeout: 100
         plmnId:
           mcc: 208
           mnc: 93
         profileName: profile2
         profileType: pdusessest
-        perUserTimeout: 90
+        sequenceNumber: 16f3b3f70fc2
         startImsi: 208930100007487
-        ueCount: 100
-        execInParallel: true
+        ueCount: 5
       - defaultAs: 192.168.254.1
         enable: false
+        execInParallel: false
         gnbName: gnb1
+        key: 5122250214c33e723a5dd523fc145fc0
+        opc: 981d464c7c52eb6e5036234984ad0bcf
+        perUserTimeout: 100
         plmnId:
           mcc: 208
           mnc: 93
         profileName: profile3
         profileType: anrelease
+        sequenceNumber: 16f3b3f70fc2
         startImsi: 208930100007497
         ueCount: 5
       - defaultAs: 192.168.254.1
         enable: false
+        execInParallel: false
         gnbName: gnb1
+        key: 5122250214c33e723a5dd523fc145fc0
+        opc: 981d464c7c52eb6e5036234984ad0bcf
+        perUserTimeout: 100
         plmnId:
           mcc: 208
           mnc: 93
         profileName: profile4
         profileType: uetriggservicereq
+        sequenceNumber: 16f3b3f70fc2
         startImsi: 208930100007497
         ueCount: 5
       - defaultAs: 192.168.254.1
         enable: false
+        execInParallel: false
         gnbName: gnb1
+        key: 5122250214c33e723a5dd523fc145fc0
+        opc: 981d464c7c52eb6e5036234984ad0bcf
+        perUserTimeout: 100
         plmnId:
           mcc: 208
           mnc: 93
         profileName: profile5
         profileType: deregister
+        sequenceNumber: 16f3b3f70fc2
         startImsi: 208930100007497
         ueCount: 5
       - defaultAs: 192.168.254.1
         enable: false
+        execInParallel: false
         gnbName: gnb1
+        key: 5122250214c33e723a5dd523fc145fc0
+        opc: 981d464c7c52eb6e5036234984ad0bcf
         perUserTimeout: 100
         plmnId:
           mcc: 208
           mnc: 93
         profileName: profile6
         profileType: nwtriggeruedereg
+        sequenceNumber: 16f3b3f70fc2
         startImsi: 208930100007497
         ueCount: 5
       - defaultAs: 192.168.254.1
         enable: false
+        execInParallel: false
         gnbName: gnb1
+        key: 5122250214c33e723a5dd523fc145fc0
+        opc: 981d464c7c52eb6e5036234984ad0bcf
+        perUserTimeout: 100
         plmnId:
           mcc: 208
           mnc: 93
         profileName: profile7
         profileType: uereqpdusessrelease
+        sequenceNumber: 16f3b3f70fc2
         startImsi: 208930100007497
         ueCount: 5
+      - defaultAs: 192.168.254.1
+        dnn: internet
+        enable: false
+        execInParallel: false
+        gnbName: gnb1
+        key: 5122250214c33e723a5dd523fc145fc0
+        opc: 981d464c7c52eb6e5036234984ad0bcf
+        plmnId:
+          mcc: 208
+          mnc: 93
+        profileName: profile8
+        profileType: nwreqpdusessrelease
+        sNssai:
+          sd: 4227
+          sst: 1
+        sequenceNumber: 16f3b3f70fc2
+        startImsi: 208930100007497
+        ueCount: 1
+      runConfigProfilesAtStart: true
       singleInterface: false
     info:
       description: gNodeB sim initial configuration
       version: 1.0.0
     logger:
       logLevel: trace
+
 ---
 # Source: sd-core/charts/5g-ran-sim/templates/service-gnbsim.yaml
 apiVersion: v1
@@ -153,8 +245,8 @@ spec:
   - name: ngapp
     port: 38412
     protocol: SCTP
-  - name: profile-http
-    port: 5000
+  - name: http-api
+    port: 6000
     protocol: TCP
 
 ---
@@ -236,23 +328,22 @@ spec:
         app: gnbsim
       annotations:
         k8s.v1.cni.cncf.io/networks: '[
-           { 
+           {
                "name": "gnb-net",
                "interface": "gnb",
-               "ips": ["192.168.251.5/24"]
+               "ips": [ "192.168.251.5/24"]
            }
          ]'
     spec:
       serviceAccountName: gnbsim
-
       initContainers:
       - name: wait-amf-module
         image: registry.opennetworking.org/docker.io/omecproject/pod-init:1.0.0
         imagePullPolicy: IfNotPresent
-        command: ['sh', '-c', 'until nslookup amf; do echo waiting for nrf; sleep 4; done;']
+        command: ['sh', '-c', 'until nslookup amf; do echo waiting for amf; sleep 4; done; sleep 20']
       containers:
       - name: gnbsim
-        image: registry.opennetworking.org/docker.io/omecproject/5gc-gnbsim:main-6e34bd2
+        image: registry.opennetworking.org/docker.io/omecproject/5gc-gnbsim:main-1caccfc
         imagePullPolicy: IfNotPresent
         securityContext:
           privileged: true
