@@ -80,6 +80,7 @@ rules:
       - extensions
       - batch
       - apps
+      - metrics.k8s.io
     verbs:
       - get
       - list
