@@ -155,7 +155,7 @@ spec:
         - name: aether.registry
       containers:
       - name: pfcp-agent
-        image: "parhamds/upf-scaler-pfcpiface:v0.2.09"
+        image: "parhamds/upf-scaler-pfcpiface:v0.2.10"
         imagePullPolicy: "IfNotPresent"
         command: ["pfcpiface"]
         args:
